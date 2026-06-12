@@ -1,0 +1,594 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@500;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#0d0f14;--surface:#141820;--surface2:#1a1f2e;--border:#1e2535;
+    --green:#00ff88;--green-dim:#00cc6a;--green-glow:rgba(0,255,136,0.15);
+    --amber:#ffa500;--red:#ff4444;--blue:#4af;
+    --text:#c8d8e8;--muted:#5a6a7a;--font-mono:'JetBrains Mono',monospace;--font-hud:'Orbitron',monospace;
+  }
+  body,html{background:transparent;}
+  #app{font-family:var(--font-mono);background:var(--bg);border-radius:12px;overflow:hidden;border:1px solid var(--border);position:relative;}
+  #app::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.015) 2px,rgba(0,255,136,0.015) 4px);pointer-events:none;z-index:0;}
+
+  .header{position:relative;z-index:1;background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+  .header-left{display:flex;align-items:center;gap:12px;}
+  .logo{font-family:var(--font-hud);font-size:13px;color:var(--green);letter-spacing:2px;}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+  .status-text{font-size:11px;color:var(--muted);}
+  .cert-badges{display:flex;gap:6px;}
+  .cert{font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid;letter-spacing:1px;font-family:var(--font-hud);}
+  .cert-grc{color:#8b5cf6;border-color:#8b5cf6;}
+  .cert-sec{color:#3b82f6;border-color:#3b82f6;}
+  .cert-thm{color:#ef4444;border-color:#ef4444;}
+  .cert-htb{color:#9fef00;border-color:#9fef00;}
+
+  .nav{position:relative;z-index:1;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;padding:0 12px;gap:4px;}
+  .nav-tab{font-family:var(--font-mono);font-size:11px;padding:10px 14px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .2s;background:none;border-top:none;border-left:none;border-right:none;letter-spacing:.5px;}
+  .nav-tab:hover{color:var(--text);}
+  .nav-tab.active{color:var(--green);border-bottom-color:var(--green);}
+  .nav-tab .tab-num{color:var(--muted);margin-right:6px;}
+  .nav-tab.active .tab-num{color:var(--green-dim);}
+
+  .content{position:relative;z-index:1;padding:20px;}
+
+  .lab-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap;}
+  .lab-title{font-family:var(--font-hud);font-size:16px;color:var(--green);letter-spacing:1px;}
+  .lab-subtitle{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5;}
+  .lab-meta{display:flex;gap:8px;flex-wrap:wrap;}
+  .meta-tag{font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);color:var(--muted);letter-spacing:.5px;}
+  .meta-tag.diff-easy{color:#00ff88;border-color:#00ff88;}
+  .meta-tag.diff-med{color:#ffa500;border-color:#ffa500;}
+  .meta-tag.diff-hard{color:#ff4444;border-color:#ff4444;}
+
+  .cert-map{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}
+  .cert-map-item{font-size:10px;padding:3px 10px;border-radius:4px;letter-spacing:.5px;}
+  .cm-grc{background:rgba(139,92,246,.15);color:#8b5cf6;border:1px solid rgba(139,92,246,.3);}
+  .cm-sec{background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);}
+  .cm-sal{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);}
+  .cm-cdsa{background:rgba(159,239,0,.15);color:#9fef00;border:1px solid rgba(159,239,0,.3);}
+
+  .scenario-box{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:8px;padding:14px 16px;margin-bottom:20px;}
+  .scenario-label{font-size:10px;color:var(--amber);letter-spacing:2px;margin-bottom:6px;}
+  .scenario-text{font-size:13px;color:var(--text);line-height:1.7;}
+
+  .objectives{margin-bottom:20px;}
+  .obj-title{font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:10px;}
+  .obj-list{display:flex;flex-direction:column;gap:6px;}
+  .obj-item{display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--text);line-height:1.5;}
+  .obj-check{width:16px;height:16px;min-width:16px;border:1px solid var(--green);border-radius:3px;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;transition:all .2s;}
+  .obj-check.done{background:var(--green);color:var(--bg);}
+  .progress-bar-wrap{background:var(--surface2);border-radius:4px;height:4px;margin-bottom:20px;overflow:hidden;}
+  .progress-bar{height:4px;background:linear-gradient(90deg,var(--green-dim),var(--green));border-radius:4px;transition:width .4s;}
+
+  .task-area{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
+  .task-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .task-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;}
+  .task-head-left{display:flex;align-items:center;gap:10px;}
+  .task-num{font-family:var(--font-hud);font-size:10px;color:var(--green);width:22px;height:22px;border:1px solid var(--green);border-radius:4px;display:flex;align-items:center;justify-content:center;}
+  .task-name{font-size:12px;color:var(--text);letter-spacing:.5px;}
+  .task-toggle{font-size:16px;color:var(--muted);transition:transform .2s;}
+  .task-toggle.open{transform:rotate(180deg);}
+  .task-body{display:none;padding:0 16px 14px;border-top:1px solid var(--border);}
+  .task-body.open{display:block;}
+  .task-body p{font-size:12px;color:var(--muted);line-height:1.7;margin:10px 0 8px;}
+  .task-body code{background:rgba(0,255,136,.08);color:var(--green);padding:1px 6px;border-radius:3px;font-size:11px;}
+  .code-block{background:#0a0c10;border:1px solid var(--border);border-radius:6px;padding:12px;font-size:11px;color:#7dd3fc;line-height:1.8;margin:10px 0;overflow-x:auto;}
+  .code-block .comment{color:var(--muted);}
+  .code-block .keyword{color:#c084fc;}
+  .code-block .string{color:#86efac;}
+  .code-block .cmd{color:var(--green);}
+
+  .tools-used{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+  .tool-tag{font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(74,170,255,.1);color:var(--blue);border:1px solid rgba(74,170,255,.2);}
+
+  .hint-box{background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.15);border-radius:6px;padding:10px 12px;margin-top:10px;}
+  .hint-label{font-size:10px;color:var(--green-dim);letter-spacing:1px;margin-bottom:4px;}
+  .hint-text{font-size:12px;color:var(--text);line-height:1.6;}
+
+  .cta-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn{font-family:var(--font-mono);font-size:11px;padding:9px 16px;border-radius:6px;cursor:pointer;letter-spacing:.5px;transition:all .2s;border:1px solid;}
+  .btn-primary{background:rgba(0,255,136,.1);color:var(--green);border-color:var(--green);}
+  .btn-primary:hover{background:rgba(0,255,136,.2);}
+  .btn-secondary{background:transparent;color:var(--muted);border-color:var(--border);}
+  .btn-secondary:hover{color:var(--text);border-color:var(--muted);}
+
+  .progress-summary{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .ps-label{font-size:11px;color:var(--muted);}
+  .ps-val{font-family:var(--font-hud);font-size:20px;color:var(--green);}
+  .ps-unit{font-size:11px;color:var(--muted);}
+</style>
+
+<div id="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="status-dot"></div>
+      <span class="logo">CYBER LAB RANGE</span>
+      <span class="status-text">// 5 ACTIVE LABS</span>
+    </div>
+    <div class="cert-badges">
+      <span class="cert cert-grc">GRC</span>
+      <span class="cert cert-sec">SEC+</span>
+      <span class="cert cert-thm">SAL1</span>
+      <span class="cert cert-htb">CDSA</span>
+    </div>
+  </div>
+
+  <div class="nav" id="nav">
+    <button class="nav-tab active" onclick="showLab(0)"><span class="tab-num">01</span>SIEM TRIAGE</button>
+    <button class="nav-tab" onclick="showLab(1)"><span class="tab-num">02</span>RISK REGISTER</button>
+    <button class="nav-tab" onclick="showLab(2)"><span class="tab-num">03</span>THREAT HUNT</button>
+    <button class="nav-tab" onclick="showLab(3)"><span class="tab-num">04</span>INCIDENT RESPONSE</button>
+    <button class="nav-tab" onclick="showLab(4)"><span class="tab-num">05</span>MALWARE ANALYSIS</button>
+  </div>
+
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+const labs = [
+  {
+    title:"LAB 01 // SIEM ALERT TRIAGE",
+    subtitle:"Investigate, correlate, and escalate security alerts like a real SOC analyst",
+    diff:"Medium",diffClass:"diff-med",
+    time:"90 min",points:250,
+    certs:["SAL1","CDSA","SEC+"],certClasses:["cm-sal","cm-cdsa","cm-sec"],
+    scenario:"It's 02:14 on a Tuesday. You receive a HIGH priority alert from Splunk: multiple failed login attempts followed by a successful authentication from an unusual geo-location for user jsmith@corp.local. Your job is to triage this alert, determine if it's a true positive, and decide on escalation path.",
+    objectives:[
+      "Identify the alert source and classify alert severity",
+      "Correlate related events across authentication logs",
+      "Determine whether the login is from a known IP or VPN",
+      "Apply the Diamond Model to characterize the potential threat",
+      "Write an SOC triage note with disposition: True Positive / False Positive / Benign"
+    ],
+    tasks:[
+      {
+        name:"Step 1 — Parse the raw Splunk alert",
+        body:`<p>Review the following Splunk log entry and extract the key fields:</p>
+<div class="code-block"><span class="comment"># Raw Splunk log (SPL output)</span>
+<span class="cmd">index=windows_auth sourcetype=WinEventLog:Security</span>
+EventCode=4625 EventCode=4624
+user="jsmith" src_ip="185.234.219.44"
+<span class="string">dest="dc01.corp.local"</span>
+_time="2024-01-16 02:11:33"
+LogonType=3  FailureCount=<span class="keyword">14</span>  SuccessCount=<span class="keyword">1</span></div>
+<p>Extract: <code>src_ip</code>, <code>EventCode</code>, <code>LogonType</code>, user, timestamp. EventCode 4625 = failed login. 4624 = success. LogonType 3 = network logon.</p>
+<div class="hint-box"><div class="hint-label">// HINT</div><div class="hint-text">14 failures then 1 success from an IP in the Netherlands is a classic credential stuffing / brute force pattern. Check VirusTotal and AbuseIPDB for the IP.</div></div>
+<div class="tools-used"><span class="tool-tag">Splunk</span><span class="tool-tag">SPL Query</span><span class="tool-tag">Windows Event IDs</span></div>`
+      },
+      {
+        name:"Step 2 — Threat Intel IP Lookup",
+        body:`<p>Run the source IP through threat intel feeds. In a real environment you'd query these tools:</p>
+<div class="code-block"><span class="comment"># VirusTotal CLI lookup</span>
+<span class="cmd">vt ip 185.234.219.44</span>
+<span class="comment"># AbuseIPDB (curl)</span>
+curl -G https://api.abuseipdb.com/api/v2/check \
+  --data-urlencode <span class="string">"ipAddress=185.234.219.44"</span> \
+  -H <span class="string">"Key: YOUR_API_KEY"</span>
+<span class="comment"># Expected result: 94% abuse confidence, 312 reports</span></div>
+<p>For this lab, treat the IP as <strong style="color:#ff4444">MALICIOUS</strong> — 94% abuse confidence. Update your triage note with this finding.</p>
+<div class="tools-used"><span class="tool-tag">VirusTotal</span><span class="tool-tag">AbuseIPDB</span><span class="tool-tag">Shodan</span></div>`
+      },
+      {
+        name:"Step 3 — Diamond Model Classification",
+        body:`<p>Apply the Diamond Model of Intrusion to structure your findings:</p>
+<div class="code-block"><span class="keyword">Adversary:</span>  Unknown / likely automated botnet
+<span class="keyword">Capability:</span> Password spraying / credential stuffing
+<span class="keyword">Infrastructure:</span> 185.234.219.44 (NL datacenter, known TOR exit)
+<span class="keyword">Victim:</span>     jsmith@corp.local — finance dept user</div>
+<p>Write your disposition. Format: <code>[SEVERITY] [CATEGORY] — [1-line summary] — [ACTION]</code></p>
+<div class="hint-box"><div class="hint-label">// SAMPLE DISPOSITION</div><div class="hint-text">HIGH | Account Compromise — Successful brute force login from malicious IP 185.234.219.44 to privileged user — ESCALATE to T2, disable account, force password reset, block IP at firewall.</div></div>
+<div class="tools-used"><span class="tool-tag">Diamond Model</span><span class="tool-tag">MITRE ATT&CK T1110</span><span class="tool-tag">Incident Ticketing</span></div>`
+      }
+    ],
+    mitre:["T1110 — Brute Force","T1078 — Valid Accounts","T1133 — External Remote Services"]
+  },
+  {
+    title:"LAB 02 // GRC RISK REGISTER",
+    subtitle:"Build and score a risk register using NIST RMF and ISO 27001 controls",
+    diff:"Easy",diffClass:"diff-easy",
+    time:"60 min",points:150,
+    certs:["GRC","SEC+"],certClasses:["cm-grc","cm-sec"],
+    scenario:"You are a GRC analyst at FinServ Corp. Following a third-party audit, leadership needs a risk register for 5 identified risks before next week's board meeting. You must score each risk, map it to NIST CSF controls, and recommend mitigations.",
+    objectives:[
+      "Define the 5×5 risk matrix (Likelihood × Impact) and scoring methodology",
+      "Identify and categorize 5 risks across people, process, and technology",
+      "Score each risk using qualitative and quantitative methods",
+      "Map risks to NIST CSF 2.0 functions and ISO 27001 Annex A controls",
+      "Write mitigation strategies and assign risk owners"
+    ],
+    tasks:[
+      {
+        name:"Step 1 — Build the 5×5 Risk Matrix",
+        body:`<p>Understand the scoring model before building your register. Risk Score = Likelihood × Impact (1–5 scale):</p>
+<div class="code-block">Likelihood: 1=Rare  2=Unlikely  3=Possible  4=Likely  5=Almost Certain
+Impact:      1=Negligible  2=Minor  3=Moderate  4=Major  5=Catastrophic
+
+<span class="string">Score 1-4:   LOW (accept)</span>
+<span class="string">Score 5-9:   MEDIUM (mitigate)</span>
+<span class="string">Score 10-15: HIGH (treat immediately)</span>
+<span class="string">Score 16-25: CRITICAL (escalate to board)</span></div>
+<p>Exercise: Score this risk — "Unpatched legacy server exposed to internet." Likelihood = 4, Impact = 5. Score = <code>20 — CRITICAL</code>.</p>
+<div class="tools-used"><span class="tool-tag">NIST RMF</span><span class="tool-tag">ISO 27001</span><span class="tool-tag">Risk Matrix</span></div>`
+      },
+      {
+        name:"Step 2 — Populate 5 Risk Entries",
+        body:`<p>Score all 5 risks and map to NIST CSF 2.0 and ISO 27001 controls:</p>
+<div class="code-block"><span class="keyword">R-001</span> Phishing leading to credential theft
+  L=4 × I=4 = <span class="string">16 CRITICAL</span>
+  NIST: PR.AT (Awareness Training)
+  ISO: A.6.3 (Information Security Awareness)
+  Owner: CISO | Mitigation: MFA + phishing simulation
+
+<span class="keyword">R-002</span> Unpatched third-party software
+  L=3 × I=4 = <span class="string">12 HIGH</span>
+  NIST: PR.IP (Patching)
+  ISO: A.8.8 (Management of Vulnerabilities)
+  Owner: IT Ops | Mitigation: 30-day patch SLA
+
+<span class="keyword">R-003</span> Insider data exfiltration
+  L=2 × I=5 = <span class="string">10 HIGH</span>
+  NIST: DE.CM (Monitoring), PR.AC
+  ISO: A.5.15 (Access Control)
+  Owner: Security | Mitigation: DLP + UEBA</div>
+<div class="hint-box"><div class="hint-label">// YOUR TASK</div><div class="hint-text">Add R-004 (Cloud misconfiguration) and R-005 (Ransomware via RDP). Score them and map to NIST/ISO controls. What owners would you assign?</div></div>
+<div class="tools-used"><span class="tool-tag">NIST CSF 2.0</span><span class="tool-tag">ISO 27001 Annex A</span><span class="tool-tag">GRC Mastery Framework</span></div>`
+      },
+      {
+        name:"Step 3 — Treatment Plans & Board Summary",
+        body:`<p>For each HIGH/CRITICAL risk, select a treatment option:</p>
+<div class="code-block"><span class="keyword">TREAT</span>   — Implement controls to reduce likelihood/impact
+<span class="keyword">TRANSFER</span> — Cyber insurance, third-party SLA
+<span class="keyword">TOLERATE</span> — Accept residual risk (document in register)
+<span class="keyword">TERMINATE</span> — Remove the risky asset/process entirely</div>
+<p>Write a 3-sentence executive summary for the board covering: overall risk posture, top 2 risks requiring immediate investment, and recommended budget ask.</p>
+<div class="hint-box"><div class="hint-label">// GRC MASTERY TIP</div><div class="hint-text">GRC Mastery exams love the difference between inherent risk (before controls) vs residual risk (after controls). Always score both in your register.</div></div>
+<div class="tools-used"><span class="tool-tag">Risk Treatment</span><span class="tool-tag">Executive Reporting</span><span class="tool-tag">Residual Risk</span></div>`
+      }
+    ],
+    mitre:["NIST CSF 2.0 GV/ID/PR/DE/RS/RC","ISO 27001 Annex A Controls","NIST SP 800-30 Risk Assessment"]
+  },
+  {
+    title:"LAB 03 // THREAT HUNTING",
+    subtitle:"Proactively hunt for lateral movement and persistence in endpoint telemetry",
+    diff:"Hard",diffClass:"diff-hard",
+    time:"120 min",points:350,
+    certs:["CDSA","SAL1"],certClasses:["cm-cdsa","cm-sal"],
+    scenario:"Your EDR has no active alerts, but the threat intel team flagged anomalous DNS beacon patterns consistent with Cobalt Strike. You need to hunt proactively across endpoint and network telemetry to find evidence of lateral movement and establish a timeline of attacker activity.",
+    objectives:[
+      "Form a threat hunting hypothesis based on threat intel",
+      "Write KQL/SPL queries to detect C2 beacon patterns in DNS logs",
+      "Identify lateral movement via unusual SMB and WMI activity",
+      "Map findings to MITRE ATT&CK and build an attacker timeline",
+      "Determine patient zero and full scope of compromise"
+    ],
+    tasks:[
+      {
+        name:"Step 1 — Form Your Hypothesis",
+        body:`<p>Every hunt starts with a hypothesis. Use the TaHiTI framework:</p>
+<div class="code-block"><span class="keyword">Hypothesis:</span> "A threat actor used Cobalt Strike C2 to maintain
+persistence on at least one endpoint, communicating via
+DNS beaconing to evade network controls."
+
+<span class="keyword">TaHiTI Structure:</span>
+Target:    Windows endpoints, DNS resolver logs
+Actor:     Nation-state or advanced eCrime (Cobalt Strike = high-tier)
+Technique: T1071.004 (DNS C2), T1021.002 (SMB lateral movement)
+Indicator: Regular DNS queries every 60s to random subdomains
+Tools:     Splunk, Elastic, Zeek/Bro logs</div>
+<div class="tools-used"><span class="tool-tag">TaHiTI Framework</span><span class="tool-tag">MITRE ATT&CK</span><span class="tool-tag">Threat Intel</span></div>`
+      },
+      {
+        name:"Step 2 — Hunt DNS Beacon Patterns",
+        body:`<p>DNS beaconing creates regular, periodic queries. Hunt for it with this SPL query:</p>
+<div class="code-block"><span class="comment"># Detect DNS beaconing — queries with regular intervals</span>
+<span class="cmd">index=dns_logs</span>
+| <span class="keyword">timechart</span> span=60s count by query
+| <span class="keyword">eventstats</span> stdev(count) as stdev avg(count) as avg by query
+| <span class="keyword">where</span> stdev < 2 AND avg > 5
+| <span class="keyword">sort</span> -avg
+
+<span class="comment"># Look for DGA (Domain Generation Algorithm) domains</span>
+<span class="cmd">index=dns_logs</span>
+| <span class="keyword">eval</span> domain_len=len(query)
+| <span class="keyword">where</span> domain_len > 20 AND match(query, <span class="string">"^[a-z0-9]{12,}\."</span>)
+| stats count by query, src_ip</div>
+<p>A DGA domain looks like: <code>xk3mf9p2lw.evil-domain.com</code> — long random subdomain, no real word components.</p>
+<div class="tools-used"><span class="tool-tag">Splunk SPL</span><span class="tool-tag">DNS Logs</span><span class="tool-tag">Beacon Detection</span></div>`
+      },
+      {
+        name:"Step 3 — Lateral Movement via SMB + WMI",
+        body:`<p>Once C2 is established, attackers move laterally. Hunt for it:</p>
+<div class="code-block"><span class="comment"># Hunt for Pass-the-Hash / SMB lateral movement</span>
+EventCode=4624 LogonType=3
+| <span class="keyword">stats</span> dc(dest) as unique_targets by src_user, src_ip
+| <span class="keyword">where</span> unique_targets > 3
+| <span class="keyword">sort</span> -unique_targets
+
+<span class="comment"># WMI remote execution (T1047)</span>
+EventCode=4648 <span class="string">"wmic.exe"</span>
+process_name=wmiprvse.exe
+<span class="keyword">NOT</span> [search index=whitelist_wmi]
+
+<span class="comment"># Build attacker timeline</span>
+<span class="cmd">index=* src_ip=&lt;malicious_ip&gt;</span>
+| <span class="keyword">sort</span> _time
+| <span class="keyword">table</span> _time, EventCode, src_ip, dest, user, process_name</div>
+<div class="hint-box"><div class="hint-label">// CDSA EXAM TIP</div><div class="hint-text">HTB CDSA expects you to pivot from one IOC to related artifacts. Always chain: IP → user → host → process → child process. Build the full kill chain before writing your report.</div></div>
+<div class="tools-used"><span class="tool-tag">Windows Event Logs</span><span class="tool-tag">Sysmon</span><span class="tool-tag">MITRE T1021</span><span class="tool-tag">T1047</span></div>`
+      }
+    ],
+    mitre:["T1071.004 — DNS Application Layer Protocol","T1021.002 — SMB/Windows Admin Shares","T1047 — WMI","T1059 — Command & Scripting Interpreter"]
+  },
+  {
+    title:"LAB 04 // INCIDENT RESPONSE",
+    subtitle:"Lead a structured IR process through containment, eradication, and recovery",
+    diff:"Hard",diffClass:"diff-hard",
+    time:"120 min",points:350,
+    certs:["CDSA","SAL1","SEC+"],certClasses:["cm-cdsa","cm-sal","cm-sec"],
+    scenario:"A ransomware attack has encrypted 3 file servers and is spreading. You are the incident commander. You have 15 minutes before the attacker's C2 beacon checks in and potentially deploys a second stage. Use the NIST IR lifecycle (Preparation → Detection → Containment → Eradication → Recovery → Lessons Learned) to stop the bleeding and recover operations.",
+    objectives:[
+      "Declare the incident and activate the IR playbook",
+      "Perform immediate network segmentation to contain spread",
+      "Identify the initial access vector (phishing email / RDP?)",
+      "Eradicate the threat: kill processes, remove persistence mechanisms",
+      "Restore from backup and document a full incident report (5 W's)"
+    ],
+    tasks:[
+      {
+        name:"Step 1 — Declare & Contain (First 15 Minutes)",
+        body:`<p>Speed kills in ransomware. Your first 15 minutes are critical:</p>
+<div class="code-block"><span class="comment"># Immediate containment checklist</span>
+<span class="keyword">[ ]</span> Isolate affected hosts from network (VLAN / firewall ACL)
+<span class="keyword">[ ]</span> Revoke AD credentials of affected service accounts
+<span class="keyword">[ ]</span> Block C2 IPs at perimeter firewall
+<span class="keyword">[ ]</span> Snapshot affected VMs (forensic preservation)
+<span class="keyword">[ ]</span> Notify: CISO, Legal, comms team — potential breach notification
+
+<span class="comment"># Network containment (firewall rule example)</span>
+<span class="cmd">iptables -I FORWARD -s 10.0.5.0/24 -j DROP</span>
+<span class="cmd">iptables -I FORWARD -d 10.0.5.0/24 -j DROP</span></div>
+<div class="hint-box"><div class="hint-label">// KEY DECISION</div><div class="hint-text">Do NOT pull the power cord — this destroys volatile memory (RAM forensics) and could corrupt partially encrypted files. Use graceful isolation first.</div></div>
+<div class="tools-used"><span class="tool-tag">NIST SP 800-61</span><span class="tool-tag">Firewall ACL</span><span class="tool-tag">Active Directory</span></div>`
+      },
+      {
+        name:"Step 2 — Root Cause Analysis",
+        body:`<p>Find how the attacker got in. Check these vectors in order:</p>
+<div class="code-block"><span class="comment"># 1. Email phishing (most common initial access)</span>
+Search email gateway logs for: malicious attachments,
+suspicious links, spoofed sender domains, 24-48hrs before first alert
+
+<span class="comment"># 2. RDP brute force / exposed ports</span>
+<span class="cmd">netstat -an | grep :3389</span>
+Check firewall logs for 3389 from external IPs
+
+<span class="comment"># 3. VPN / Citrix vulnerability</span>
+Check patch levels on VPN appliances
+Review auth logs for unusual off-hours access
+
+<span class="comment"># 4. Supply chain / trusted vendor</span>
+Review third-party vendor access logs (jump server)</div>
+<p>For each vector, record: <code>Evidence supporting</code> / <code>Evidence against</code> / <code>Confidence %</code></p>
+<div class="tools-used"><span class="tool-tag">Email Gateway Logs</span><span class="tool-tag">Firewall Logs</span><span class="tool-tag">VPN Logs</span><span class="tool-tag">MITRE T1190</span></div>`
+      },
+      {
+        name:"Step 3 — Eradication & Lessons Learned",
+        body:`<p>Remove attacker persistence and document formally:</p>
+<div class="code-block"><span class="comment"># Persistence mechanisms to check (Autoruns)</span>
+HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+HKLM\Software\Microsoft\Windows\CurrentVersion\Run
+Scheduled Tasks: <span class="cmd">schtasks /query /fo LIST /v</span>
+Services: <span class="cmd">sc query type= all state= all</span>
+WMI Subscriptions: <span class="cmd">Get-WMIObject -Namespace root\subscription -Class __EventFilter</span>
+
+<span class="comment"># 5 W's Incident Report Template</span>
+<span class="keyword">Who:</span>    Affected users / systems / business units
+<span class="keyword">What:</span>   Nature of attack (ransomware family, TTPs)
+<span class="keyword">When:</span>   Timeline from initial access to detection
+<span class="keyword">Where:</span>  Systems compromised, data stores accessed
+<span class="keyword">Why:</span>    Root cause (unpatched, misconfiguration, human error)</div>
+<div class="hint-box"><div class="hint-label">// SAL1 + CDSA EXAM TIP</div><div class="hint-text">Both TryHackMe SAL1 and HTB CDSA test your ability to write formal IR reports. Practice the 5 W's format and know the NIST IR phases cold.</div></div>
+<div class="tools-used"><span class="tool-tag">Autoruns</span><span class="tool-tag">PowerShell</span><span class="tool-tag">NIST IR Lifecycle</span></div>`
+      }
+    ],
+    mitre:["T1486 — Data Encrypted for Impact","T1490 — Inhibit System Recovery","T1547 — Boot/Logon Autostart","T1021 — Remote Services"]
+  },
+  {
+    title:"LAB 05 // MALWARE ANALYSIS",
+    subtitle:"Static and dynamic analysis of a suspicious PE file in a sandboxed environment",
+    diff:"Hard",diffClass:"diff-hard",
+    time:"90 min",points:300,
+    certs:["CDSA","SAL1"],certClasses:["cm-cdsa","cm-sal"],
+    scenario:"A user in accounting opened an email attachment: 'Invoice_2024_Q4.pdf.exe'. Your EDR quarantined it but you need to analyze the sample to determine its capabilities, extract IOCs, and determine if any data was exfiltrated before containment. You have a Windows sandbox VM ready.",
+    objectives:[
+      "Perform static analysis: file hashing, strings, PE header inspection",
+      "Submit to sandbox (Any.run / Cuckoo) and capture behavioral report",
+      "Identify network IOCs: C2 domains, IP addresses, HTTP patterns",
+      "Identify host IOCs: registry keys, dropped files, persistence mechanisms",
+      "Write a malware analysis report with MITRE ATT&CK mapping"
+    ],
+    tasks:[
+      {
+        name:"Step 1 — Static Analysis (No Execution)",
+        body:`<p>Never run unknown malware on a production machine. Start with static analysis:</p>
+<div class="code-block"><span class="comment"># 1. Get file hash (fingerprint)</span>
+<span class="cmd">sha256sum Invoice_2024_Q4.pdf.exe</span>
+<span class="comment"># Submit hash to VirusTotal — check if known malware</span>
+
+<span class="comment"># 2. Check file type (ignore the extension)</span>
+<span class="cmd">file Invoice_2024_Q4.pdf.exe</span>
+<span class="comment"># Output: PE32 executable (GUI) Intel 80386 = it's a Windows EXE</span>
+
+<span class="comment"># 3. Extract strings (look for URLs, IPs, registry keys)</span>
+<span class="cmd">strings Invoice_2024_Q4.pdf.exe | grep -E "(http|https|cmd|powershell|HKCU|HKLM)"</span>
+
+<span class="comment"># 4. PE header analysis (imports = capabilities)</span>
+<span class="cmd">pecheck.py Invoice_2024_Q4.pdf.exe</span>
+<span class="comment"># Look for: CreateRemoteThread, VirtualAlloc, WriteProcessMemory</span>
+<span class="comment"># These = process injection capability</span></div>
+<div class="tools-used"><span class="tool-tag">VirusTotal</span><span class="tool-tag">CyberChef</span><span class="tool-tag">PE-bear</span><span class="tool-tag">strings</span></div>`
+      },
+      {
+        name:"Step 2 — Dynamic Analysis in Sandbox",
+        body:`<p>Execute in a controlled sandbox and capture behavior:</p>
+<div class="code-block"><span class="comment"># Tools to run in sandbox VM simultaneously:</span>
+<span class="keyword">Procmon</span>    — File system + registry activity
+<span class="keyword">Wireshark</span>  — Network captures (pcap)
+<span class="keyword">Autoruns</span>   — Persistence mechanisms created
+<span class="keyword">Process Hacker</span> — Process tree, injections, memory
+
+<span class="comment"># What to document (IOCs):</span>
+<span class="string">Network:</span>
+  - C2 IP/domain (DNS queries made)
+  - HTTP/HTTPS callbacks (User-Agent, URL patterns)
+  - Data exfil (large POST requests)
+
+<span class="string">Host:</span>
+  - Files dropped: %TEMP%, %APPDATA%
+  - Registry: HKCU\Software\Microsoft\...\Run
+  - Scheduled tasks created
+  - Child processes spawned (cmd.exe? powershell.exe?)</div>
+<div class="hint-box"><div class="hint-label">// SANDBOX TIP</div><div class="hint-text">Use Any.run (interactive sandbox) or Cuckoo. Malware often checks for VM artifacts (vmtoolsd.exe, vboxservice.exe). Some samples sleep for 60-120s before activating to evade automated analysis — let it run for at least 3 minutes.</div></div>
+<div class="tools-used"><span class="tool-tag">Any.run</span><span class="tool-tag">Cuckoo</span><span class="tool-tag">Wireshark</span><span class="tool-tag">Procmon</span></div>`
+      },
+      {
+        name:"Step 3 — IOC Report & ATT&CK Mapping",
+        body:`<p>Compile all findings into a structured malware report:</p>
+<div class="code-block"><span class="keyword">MALWARE ANALYSIS REPORT — TEMPLATE</span>
+
+<span class="string">1. Executive Summary</span>
+   Sample type, family (if known), risk level, recommendation
+
+<span class="string">2. Static Analysis Findings</span>
+   SHA256, compile time, suspicious imports, encoded strings
+
+<span class="string">3. Dynamic Behavior</span>
+   Process tree, network connections, file drops, persistence
+
+<span class="string">4. IOC List</span>
+   [ ] IP: 185.234.x.x
+   [ ] Domain: c2callback.evil.com
+   [ ] File: %APPDATA%\svchost32.exe (SHA256: abc123...)
+   [ ] Registry: HKCU\Run\WindowsUpdate = svchost32.exe
+
+<span class="string">5. MITRE ATT&CK Mapping</span>
+   T1566.001 — Spearphishing Attachment (initial access)
+   T1059.001 — PowerShell (execution)
+   T1547.001 — Registry Run Keys (persistence)
+   T1071.001 — HTTP C2 (command & control)</div>
+<div class="tools-used"><span class="tool-tag">MITRE ATT&CK Navigator</span><span class="tool-tag">OpenIOC</span><span class="tool-tag">YARA Rules</span></div>`
+      }
+    ],
+    mitre:["T1566.001 — Spearphishing Attachment","T1059.001 — PowerShell","T1547.001 — Registry Run Keys Persistence","T1071.001 — HTTP C2 Communication"]
+  }
+];
+
+let progress = {};
+try { progress = JSON.parse(localStorage.getItem('lab_progress')||'{}'); } catch(e){}
+
+function saveProgress(){
+  try { localStorage.setItem('lab_progress', JSON.stringify(progress)); } catch(e){}
+}
+
+function getChecked(labIdx){
+  return progress[labIdx] || [];
+}
+
+function countChecked(labIdx){
+  return (progress[labIdx]||[]).length;
+}
+
+let currentLab = 0;
+
+function showLab(idx){
+  currentLab = idx;
+  const tabs = document.querySelectorAll('.nav-tab');
+  tabs.forEach((t,i) => t.classList.toggle('active', i===idx));
+  renderLab(idx);
+}
+
+function renderLab(idx){
+  const lab = labs[idx];
+  const checked = getChecked(idx);
+  const total = lab.objectives.length;
+  const done = checked.length;
+  const pct = Math.round(done/total*100);
+
+  const mitreHtml = lab.mitre.map(m=>`<span class="meta-tag">${m}</span>`).join('');
+  const certsHtml = lab.certs.map((c,i)=>`<span class="cert-map-item ${lab.certClasses[i]}">${c}</span>`).join('');
+  const objsHtml = lab.objectives.map((o,i)=>{
+    const isDone = checked.includes(i);
+    return `<div class="obj-item">
+      <div class="obj-check ${isDone?'done':''}" onclick="toggleObj(${idx},${i})" title="Mark complete">${isDone?'✓':''}</div>
+      <span style="${isDone?'opacity:.5;text-decoration:line-through':''}">${o}</span>
+    </div>`;
+  }).join('');
+
+  const tasksHtml = lab.tasks.map((t,i)=>`
+    <div class="task-card">
+      <div class="task-head" onclick="toggleTask(this)">
+        <div class="task-head-left">
+          <div class="task-num">${String(i+1).padStart(2,'0')}</div>
+          <div class="task-name">${t.name}</div>
+        </div>
+        <div class="task-toggle">▾</div>
+      </div>
+      <div class="task-body">${t.body}</div>
+    </div>`).join('');
+
+  document.getElementById('content').innerHTML = `
+    <div class="lab-header">
+      <div>
+        <div class="lab-title">${lab.title}</div>
+        <div class="lab-subtitle">${lab.subtitle}</div>
+      </div>
+      <div class="lab-meta">
+        <span class="meta-tag ${lab.diffClass}">${lab.diff}</span>
+        <span class="meta-tag">⏱ ${lab.time}</span>
+        <span class="meta-tag">◈ ${lab.points} pts</span>
+      </div>
+    </div>
+    <div class="cert-map">${certsHtml}</div>
+    <div class="scenario-box">
+      <div class="scenario-label">// SCENARIO</div>
+      <div class="scenario-text">${lab.scenario}</div>
+    </div>
+    <div class="objectives">
+      <div class="obj-title">// LEARNING OBJECTIVES (${done}/${total} COMPLETE)</div>
+      <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+      <div class="obj-list">${objsHtml}</div>
+    </div>
+    <div class="objectives" style="margin-top:20px;">
+      <div class="obj-title">// HANDS-ON TASKS</div>
+    </div>
+    <div class="task-area">${tasksHtml}</div>
+    <div class="objectives" style="margin-top:4px;">
+      <div class="obj-title" style="margin-bottom:8px">// MITRE ATT&CK COVERAGE</div>
+      <div class="lab-meta" style="flex-wrap:wrap;gap:6px;">${mitreHtml}</div>
+    </div>
+    <div style="margin-top:20px" class="cta-row">
+      <button class="btn btn-primary" onclick="sendPrompt('Give me a quiz on Lab ${idx+1}: ${lab.title} — test my knowledge with 5 questions ↗')">Quiz me on this lab ↗</button>
+      <button class="btn btn-secondary" onclick="sendPrompt('Go deeper on ${lab.title} — what are the most common mistakes beginners make and what should I study next? ↗')">Go deeper ↗</button>
+    </div>
+  `;
+}
+
+function toggleObj(labIdx, objIdx){
+  if(!progress[labIdx]) progress[labIdx]=[];
+  const arr = progress[labIdx];
+  const pos = arr.indexOf(objIdx);
+  if(pos===-1) arr.push(objIdx); else arr.splice(pos,1);
+  saveProgress();
+  renderLab(labIdx);
+}
+
+function toggleTask(head){
+  const body = head.nextElementSibling;
+  const toggle = head.querySelector('.task-toggle');
+  const open = body.classList.toggle('open');
+  toggle.classList.toggle('open', open);
+}
+
+showLab(0);
+</script>
